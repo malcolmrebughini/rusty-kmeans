@@ -1,6 +1,10 @@
 use rand;
 use std::collections::HashMap;
 
+type Point = (f64, f64);
+type Centers = Vec<Point>;
+type Labels = Vec<usize>;
+
 // Can be moved to its own module
 fn calculate_euclidian_distance(p: Point, q: Point) -> f64 {
     let (x1, y1) = p;
@@ -12,18 +16,16 @@ fn calculate_euclidian_distance(p: Point, q: Point) -> f64 {
     return (x * x + y * y).sqrt();
 }
 
-fn init_random(data: &Vec<Point>, count: usize) -> Vec<Point> {
+fn init_random(data: &Vec<Point>, count: usize) -> Centers {
     let mut rng = rand::thread_rng();
     let rnd_indexes = rand::seq::index::sample(&mut rng, data.len(), count);
     return rnd_indexes.iter().map(|i| data[i]).collect();
 }
 
-type Point = (f64, f64);
-
 enum Init {
     // Could add more, like PlusPlus
     Random,
-    Fixed(Vec<Point>), // Fixed centers for the initial pass
+    Fixed(Centers), // Fixed centers for the initial pass
 }
 // Config keys based on sklearn interface
 struct Config {
@@ -63,7 +65,7 @@ impl KMeans {
 
     // Deviating a bit from the sklearn interface and returning the labels
     // and centers instead of saving them internally in the KMeans object.
-    pub fn fit(self, data: Vec<Point>) -> (Vec<usize>, Vec<Point>) {
+    pub fn fit(self, data: Vec<Point>) -> (Labels, Centers) {
         // TODO: Check data length is more than 0
         // TODO: Check data length is less than the desired clusters
         let mut centers = match self.config.init {
@@ -71,7 +73,7 @@ impl KMeans {
             Init::Fixed(centers) => centers,
         };
 
-        let mut labels: Vec<usize> = vec![0; data.len()];
+        let mut labels: Labels = vec![0; data.len()];
         let mut distances: Vec<f64> = vec![0.; data.len()];
 
         // Calculate distances and assign labels
