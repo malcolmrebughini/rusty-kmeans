@@ -12,22 +12,42 @@ fn calculate_euclidian_distance(p: Point, q: Point) -> f64 {
     return (x * x + y * y).sqrt();
 }
 
+fn init_random(data: &Vec<Point>, count: usize) -> Vec<Point> {
+    let mut rng = rand::thread_rng();
+    let rnd_indexes = rand::seq::index::sample(&mut rng, data.len(), count);
+    return rnd_indexes.iter().map(|i| data[i]).collect();
+}
+
 type Point = (f64, f64);
 
+enum Init {
+    // Could add more, like PlusPlus
+    Random,
+    Fixed(Vec<Point>), // Fixed centers for the initial pass
+}
 // Config keys based on sklearn interface
 struct Config {
     n_clusters: usize,
+    init: Init,
 }
 
 impl Config {
     pub fn default() -> Config {
-        let config = Config { n_clusters: 8 };
+        let config = Config {
+            n_clusters: 8,
+            init: Init::Random,
+        };
 
         return config;
     }
 
     pub fn n_clusters(mut self, n_clusters: usize) -> Self {
         self.n_clusters = n_clusters;
+        return self;
+    }
+
+    pub fn init(mut self, init: Init) -> Self {
+        self.init = init;
         return self;
     }
 }
@@ -46,10 +66,10 @@ impl KMeans {
     pub fn fit(self, data: Vec<Point>) -> (Vec<usize>, Vec<Point>) {
         // TODO: Check data length is more than 0
         // TODO: Check data length is less than the desired clusters
-        // Select random indexes
-        let mut rng = rand::thread_rng();
-        let rnd_indexes = rand::seq::index::sample(&mut rng, data.len(), self.config.n_clusters);
-        let mut centers: Vec<Point> = rnd_indexes.iter().map(|i| data[i]).collect();
+        let mut centers = match self.config.init {
+            Init::Random => init_random(&data, self.config.n_clusters),
+            Init::Fixed(centers) => centers,
+        };
 
         let mut labels: Vec<usize> = vec![0; data.len()];
         let mut distances: Vec<f64> = vec![0.; data.len()];
@@ -127,8 +147,10 @@ mod tests {
     use super::*;
 
     #[test]
-    fn fit() {
-        let config = Config::default().n_clusters(2);
+    fn fit_fixed_init() {
+        let config = Config::default()
+            .n_clusters(2)
+            .init(Init::Fixed(vec![(1., 2.), (4., 2.)]));
         let kmeans = KMeans::new(config);
         let data = vec![(1., 2.), (1., 4.), (1., 0.), (4., 2.), (4., 4.), (4., 0.)];
         let (labels, centers) = kmeans.fit(data);
