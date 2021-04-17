@@ -4,8 +4,6 @@
 // calculate distances again and reassign
 // continue until the grouping doesn't change anymore
 
-// Config struct
-
 // Config keys based on sklearn interface
 struct Config {
     n_clusters: u32,
@@ -33,10 +31,10 @@ impl KMeans {
         return KMeans { config: config };
     }
 
-    pub fn fit(self, data: Vec<(f64, f64)>) {}
+    pub fn fit(self, data: Vec<(f64, f64)>) -> (Vec<u32>, Vec<(f64, f64)>) {
+        return (vec![], vec![]);
+    }
 }
-
-// KMeans struct
 
 #[cfg(test)]
 mod tests {
@@ -46,6 +44,10 @@ mod tests {
     fn fit() {
         let config = Config::default();
         let kmeans = KMeans::new(config);
-        kmeans.fit(vec![]);
+        let data = vec![(1., 2.), (1., 4.), (1., 0.), (4., 2.), (4., 4.), (4., 0.)];
+        let (labels, centers) = kmeans.fit(data);
+
+        assert_eq!(labels, vec![0, 0, 0, 1, 1, 1]);
+        assert_eq!(centers, vec![(1., 2.), (4., 2.)]);
     }
 }
